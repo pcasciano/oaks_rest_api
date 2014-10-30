@@ -1,7 +1,7 @@
 from geogigpy import geogig
 from geogigpy.repo import Repository
 from django.conf import settings
-from django_oaks_rest_api.models import ShapeFile
+from oaks_rest_api.models import ShapeFile
 import os
 
 
