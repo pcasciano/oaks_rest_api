@@ -1,8 +1,8 @@
 from rest_framework.test import APITestCase
 from rest_framework.test import APIRequestFactory, APIClient, \
     force_authenticate
-from django_oaks_rest_api.views import ShapeList
-from django_oaks_rest_api.tests.common import setup_user
+from oaks_rest_api.views import ShapeList
+from oaks_rest_api.tests.common import setup_user
 import os
 #from django.core.files import File
 from django.core.files.uploadedfile import SimpleUploadedFile, UploadedFile

@@ -1,8 +1,8 @@
 from rest_framework.test import APITestCase
 from rest_framework.test import APIRequestFactory, APIClient, \
     force_authenticate
-from django_oaks_rest_api.views import TripleStoreList
-from django_oaks_rest_api.tests.common import setup_user
+from oaks_rest_api.views import TripleStoreList
+from oaks_rest_api.tests.common import setup_user
 
 
 class TestTripleStoresView(APITestCase):
