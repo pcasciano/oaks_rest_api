@@ -20,7 +20,7 @@ def rename_params(params):
 
     #change some params names to make them understandable to triplegeo
     for k, v in params.items():
-        if k.find('_') != -1:
+        if not '_' in k:
             params[to_camelcase(k)] = v
             params.pop(k)
     params['job'] = 'file'
