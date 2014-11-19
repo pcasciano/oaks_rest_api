@@ -90,6 +90,21 @@ class TripleStore(models.Model):
         super(TripleStore, self).delete(*args, **kwargs)
 
 
+class GeonodeResource(models.Model):
+    layer = models.CharField(max_length=200, blank=False, null=True)
+    workspace = models.CharField(max_length=50, blank=True, null=True)
+    map = models.CharField(max_length=300, blank=True, null=True)
+    
+    shp = models.ForeignKey(ShapeFile)
+    
+  
+class CkanResource(models.Model):
+    api_key = models.CharField(max_length=200, blank=True, null=True)
+    id_resource = models.CharField(max_length=20, blank=True, null=True)
+    
+    shp = models.ForeignKey(ShapeFile)
+
+    
 class UserDataLoadedEvents(models.Model):
     """
     This model contains every data loaded event.
