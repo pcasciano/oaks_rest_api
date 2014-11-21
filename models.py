@@ -93,7 +93,8 @@ class TripleStore(models.Model):
 class GeonodeResource(models.Model):
     layer = models.CharField(max_length=200, blank=False, null=True)
     workspace = models.CharField(max_length=50, blank=True, null=True)
-    map = models.CharField(max_length=300, blank=True, null=True)
+    map = models.CharField(max_length=300, blank=True, null=True)    
+    output_wfs = models.CharField(max_length=300, blank=True, null=True)
     
     shp = models.ForeignKey(ShapeFile)
     

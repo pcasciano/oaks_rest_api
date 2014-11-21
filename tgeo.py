@@ -20,20 +20,28 @@ def rename_params(params):
 
     #change some params names to make them understandable to triplegeo
     for k, v in params.items():
-        if not '_' in k:
+        if '_' in k:
             params[to_camelcase(k)] = v
             params.pop(k)
+          
     params['job'] = 'file'
     params['format'] = [t for v, t in TGEO_STORE_FORMATS if
                              v == params['formatFile']][0] #TODO::controllo su formato valido!
     file_extension = '.'+params['formatFile'].lower()
     params.pop('formatFile')
-    params['type'] = params['typeWkt']
-    params.pop('typeWkt')
     
-    print params.keys()
-    params['class'] = params['classStore']
-    params.pop('classStore')
+    if params.has_key('typeWkt'):
+      params['type'] = params['typeWkt']
+      params.pop('typeWkt')
+    else:
+      params['type'] = 'point'
+  
+    if params.has_key('classStore'):
+      params['class'] = params['classStore']
+      params.pop('classStore')
+    else:
+      params['class'] = ''
+      
     params['nsPrefix'] = ''
 
     return params

@@ -56,6 +56,13 @@ def save_shp(shape_file, user):
                                           owner=user)
     return file_saved
 
+def save_ckan_resource(shp_id, resource_id, api_key=None):
+    """
+    saves a ckan resource
+    """
+    #check api_key
+    #if api_key.is_valid():    
+    pass #CkanResource.objects.create() <--
 
 class ShapeList(APIView):
     """
@@ -223,24 +230,21 @@ class ShapeList(APIView):
 	    #else:
 		#return Response({'detail': result}, status=status.HTTP_200_OK)
      
-     
-     
-     
-     
-	     
-                
+      
         if request.QUERY_PARAMS.has_key('type'):
             upload_type = request.QUERY_PARAMS['type'].lower()
             create_dir(settings.UPLOAD_SHAPE)
-            if upload_type == 'base': #or normal or..other words?
-                shape_serializer = ShapeFileSerializer(data=request.FILES)
+            shape_serializer = ShapeFileSerializer(data=request.FILES)
+            
+            if upload_type == 'base':            
                 if shape_serializer.is_valid():
                     file_shp = save_shp(request.FILES, self.request.user)
+		    
                     return process(file_shp, store_in_semantic_db=False)
                 elif u'zip' in request.FILES:
                     f = get_shp_from_zip(request.FILES['zip'])
                     if f:
-                        file_shp = save_shp(f, self.request.user)
+                        file_shp = save_shp(f, self.request.user)                        
                         return process(file_shp, store_in_semantic_db=False)
                     else:
                       return Response(shape_serializer.errors,
@@ -249,8 +253,7 @@ class ShapeList(APIView):
                     return Response(shape_serializer.errors,
                                     status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 	      
-            elif upload_type == 'all': # or semantic or other?
-                shape_serializer = ShapeFileSerializer(data=request.FILES)
+            elif upload_type == 'all':                
                 if shape_serializer.is_valid():
                     triple_store_serializer = TripleStoreSerializer(
                         data=request.DATA)

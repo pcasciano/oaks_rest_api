@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from oaks_rest_api.models import ShapeFile, TripleStore
+from oaks_rest_api.models import ShapeFile, TripleStore, CkanResource
 from django.core.validators import URLValidator
 from django.contrib.auth.models import User
 
@@ -77,3 +77,12 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('id', 'username', 'shapefiles')
+
+        
+class CkanResourceSerializer(serializers.ModelSerializer):  
+   """
+   Ckan resource serializer
+   """
+   class Meta:
+       model = CkanResource
+  
