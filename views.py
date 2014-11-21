@@ -1,8 +1,7 @@
 """API Views for oaks_rest_api application."""
 from oaks_rest_api.models import ShapeFile, TripleStore, NodeToken, \
     TGEO_STORE_FORMATS
-from oaks_rest_api.serializers import ShapeFileSerializer, TripleStoreSerializer, \
-    UserSerializer
+from oaks_rest_api.serializers import *
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
@@ -56,13 +55,18 @@ def save_shp(shape_file, user):
                                           owner=user)
     return file_saved
 
-def save_ckan_resource(shp_id, resource_id, api_key=None):
+def save_ckan_resource(id_shp, params):
     """
     saves a ckan resource
     """
     #check api_key
-    #if api_key.is_valid():    
-    pass #CkanResource.objects.create() <--
+    #if api_key.is_valid():  
+    if params.has_key('ckan_api_key') and params.has_key('ckan_id'):      
+      CkanResource.objects.create(api_key=params['ckan_api_key'], 
+				id_resource=params['ckan_id'], 
+				shp_id=id_shp)
+      params.pop('ckan_api_key')				  
+      params.pop('ckan_id')
 
 class ShapeList(APIView):
     """
@@ -172,17 +176,28 @@ class ShapeList(APIView):
 	    - name: commit_msg
 	      type: string
 	      required: false
+	      paramType: form	
+	    - name: ckan_api_key
+	      type: string
+	      required: false
+	      paramType: form
+	    - name: ckan_id
+	      type: string
+	      required: false
 	      paramType: form	      
         """
-
-	def process(file_shp, store_in_semantic_db=False):
+        params = request.DATA.dict()
+        
+	def process(file_shp, params, store_in_semantic_db=False):
 	   
 		    
 	    #create auth token
 	    token = NodeToken.objects.create(user=self.request.user)
+	    
+	    
 		    
 	    if store_in_semantic_db:
-	      	params = request.DATA.dict()
+	      	#params = request.DATA.dict()
 	        params['input_file'] = file_shp.shp.name
 	        
 		pos = params['input_file'].rfind('/')
@@ -205,7 +220,7 @@ class ShapeList(APIView):
 		  #return Response({'commit_msg':["This query parameter is required."]},
 			      #status=status.HTTP_400_BAD_REQUEST)
 		      
-		      #TODO:: vedi se possibile togliere triple_store
+		      #TODO:: vedi se possibile togliere triple_store		     
 		triple_store = TripleStore.objects.create(**params)
 		  
 		params = rename_params(params)                                                                     
@@ -239,13 +254,13 @@ class ShapeList(APIView):
             if upload_type == 'base':            
                 if shape_serializer.is_valid():
                     file_shp = save_shp(request.FILES, self.request.user)
-		    
-                    return process(file_shp, store_in_semantic_db=False)
+		    save_ckan_resource(file_shp.id, params)  
+                    return process(file_shp, params, store_in_semantic_db=False)
                 elif u'zip' in request.FILES:
                     f = get_shp_from_zip(request.FILES['zip'])
                     if f:
                         file_shp = save_shp(f, self.request.user)                        
-                        return process(file_shp, store_in_semantic_db=False)
+                        return process(file_shp, params, store_in_semantic_db=False)
                     else:
                       return Response(shape_serializer.errors,
                                     status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)  
@@ -254,12 +269,13 @@ class ShapeList(APIView):
                                     status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 	      
             elif upload_type == 'all':                
-                if shape_serializer.is_valid():
+                if shape_serializer.is_valid():		  
                     triple_store_serializer = TripleStoreSerializer(
                         data=request.DATA)
                     if triple_store_serializer.is_valid():
                         file_shp = save_shp(request.FILES, self.request.user)
-                        return process(file_shp,  store_in_semantic_db=True)
+                        save_ckan_resource(file_shp.id, params) 
+                        return process(file_shp,  params, store_in_semantic_db=True)
                     else:
                         return Response(triple_store_serializer.errors,
                                         status=status.HTTP_400_BAD_REQUEST)
@@ -267,7 +283,7 @@ class ShapeList(APIView):
                     f = get_shp_from_zip(request.FILES['zip'])
                     if f:
                         file_shape =  save_shp(f, self.request.user)
-                        return process(file_shape, store_in_semantic_db=True)
+                        return process(file_shape, params, store_in_semantic_db=True)
                 else:
                     return Response(shape_serializer.errors,
                                     status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
