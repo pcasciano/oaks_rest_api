@@ -89,10 +89,10 @@ def zip_files(files, zip_name):
     #returns zip files string if there are files in zip,
     #None, otherwise.
     
-    if files_len > file_not_found_count:
-        #return s.getvalue()
+    if files_len > file_not_found_count:        
 	return None
     else:
+	delete_file(zip_name)
 	raise BadZipfile('Zip file not valid!')
       
 
