@@ -234,6 +234,7 @@ class ShapeList(APIView):
 		      
 		      #TODO:: vedi se possibile togliere triple_store		     
 		triple_store = TripleStore.objects.create(**params)
+		triple_store.shp.add(file_shp)
 		  
 		params = rename_params(params)                                                                     
 
