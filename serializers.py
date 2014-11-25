@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from oaks_rest_api.models import ShapeFile, TripleStore, CkanResource
+from oaks_rest_api.models import *
 from django.core.validators import URLValidator
 from django.contrib.auth.models import User
 
@@ -86,3 +86,9 @@ class CkanResourceSerializer(serializers.ModelSerializer):
    class Meta:
        model = CkanResource
   
+class GeonodeResourceSerializer(serializers.ModelSerializer):  
+   """
+   Geonode resource serializer
+   """
+   class Meta:
+       model = GeonodeResource

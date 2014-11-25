@@ -9,6 +9,7 @@ from django.core.files.base import ContentFile
 import shutil
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
+
 def get_shp_from_zip(zip_file):
     """
     extract components file parts of a shapefile from a zip file
@@ -53,10 +54,10 @@ def zip_files(files, zip_name):
     zip_name -- name of created zip file
 
     """
-    s = cStringIO.StringIO()
-    zip_file = ZipFile(s, 'w')
+   # s = cStringIO.StringIO()
+#    zip_file = ZipFile(s, 'w')
     zip_name = zip_name+'.zip'
-
+    zip_file = ZipFile(zip_name, 'w')
     files_len = len(files)
     #counter for not found files in list arg
     file_not_found_count = 0
@@ -83,13 +84,17 @@ def zip_files(files, zip_name):
             #file not found
             file_not_found_count += 1
     zip_file.close()
+        
 
     #returns zip files string if there are files in zip,
     #None, otherwise.
+    
     if files_len > file_not_found_count:
-        return s.getvalue()
+        #return s.getvalue()
+	return None
     else:
-        return None
+	raise BadZipfile('Zip file not valid!')
+      
 
 def save_shape_in_tmp_dir(shp_file):
     """

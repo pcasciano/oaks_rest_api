@@ -9,16 +9,15 @@ from rest_framework import status, generics
 from django.http import HttpResponse
 from oaks_rest_api.tgeo import rename_params
 from django.conf import settings
-from oaks_rest_api.utils import zip_files, save_shape_in_tmp_dir, create_dir, get_shp_from_zip
+from oaks_rest_api.utils import *
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from oaks_rest_api.node import post_node_server
 from oaks_rest_api.git import Git
 from os.path import basename, splitext, isdir
+from zipfile import BadZipfile
 
 
-    
-# from rest_framework_swagger.decorators import serializer_class
 
 def download_file(file, file_name):
     """
@@ -42,18 +41,16 @@ def download_file(file, file_name):
         return Response({'detail': 'file not found'},
                         status=status.HTTP_404_NOT_FOUND)
 
+                        
+def download_file_url(file_path):
+    """
+    Creates link url file resource
+    """  
+    file_path = file_path.replace('/var/www/', '') 
+    url = settings.SITEURL+file_path
+    return Response({'file': url},
+                        status=status.HTTP_200_OK)
 
-def save_shp(shape_file, user):
-    """
-    Saves a shape file on server
-    """
-    shp = shape_file['shp']
-    shx = shape_file['shx']
-    dbf = shape_file['dbf']
-    prj = shape_file['prj']
-    file_saved = ShapeFile.objects.create(shp=shp, shx=shx, dbf=dbf, prj=prj,
-                                          owner=user)
-    return file_saved
 
 def save_ckan_resource(id_shp, params):
     """
@@ -67,6 +64,9 @@ def save_ckan_resource(id_shp, params):
 				shp_id=id_shp)
       params.pop('ckan_api_key')				  
       params.pop('ckan_id')
+      
+#def save_geonode_resource(id_shp, ):
+  
 
 class ShapeList(APIView):
     """
@@ -75,6 +75,18 @@ class ShapeList(APIView):
     throttle_scope = 'default'
     parser_classes = (MultiPartParser, FormParser)
     permission_classes = (IsAuthenticated, )
+    
+    def save_shp(self, shape_file, user):
+	"""
+	Saves a shape file on server
+	"""
+	shp = shape_file['shp']
+	shx = shape_file['shx']
+	dbf = shape_file['dbf']
+	prj = shape_file['prj']
+	file_saved = ShapeFile.objects.create(shp=shp, shx=shx, dbf=dbf, prj=prj,
+					      owner=user)
+	return file_saved
 
     def pre_save(self, obj):
         obj.owner = self.request.user
@@ -253,13 +265,13 @@ class ShapeList(APIView):
             
             if upload_type == 'base':            
                 if shape_serializer.is_valid():
-                    file_shp = save_shp(request.FILES, self.request.user)
+                    file_shp = self.save_shp(request.FILES, self.request.user)
 		    save_ckan_resource(file_shp.id, params)  
                     return process(file_shp, params, store_in_semantic_db=False)
                 elif u'zip' in request.FILES:
                     f = get_shp_from_zip(request.FILES['zip'])
                     if f:
-                        file_shp = save_shp(f, self.request.user)                        
+                        file_shp = self.save_shp(f, self.request.user)                        
                         return process(file_shp, params, store_in_semantic_db=False)
                     else:
                       return Response(shape_serializer.errors,
@@ -273,7 +285,7 @@ class ShapeList(APIView):
                     triple_store_serializer = TripleStoreSerializer(
                         data=request.DATA)
                     if triple_store_serializer.is_valid():
-                        file_shp = save_shp(request.FILES, self.request.user)
+                        file_shp = self.save_shp(request.FILES, self.request.user)
                         save_ckan_resource(file_shp.id, params) 
                         return process(file_shp,  params, store_in_semantic_db=True)
                     else:
@@ -282,7 +294,7 @@ class ShapeList(APIView):
                 elif u'zip' in request.FILES:
                     f = get_shp_from_zip(request.FILES['zip'])
                     if f:
-                        file_shape =  save_shp(f, self.request.user)
+                        file_shape =  self.save_shp(f, self.request.user)
                         return process(file_shape, params, store_in_semantic_db=True)
                 else:
                     return Response(shape_serializer.errors,
@@ -314,10 +326,26 @@ class ShapeDetail(APIView):
         except ShapeFile.DoesNotExist:
             return Response({'detail': 'Not found'},
                             status=status.HTTP_404_NOT_FOUND)
+                            
         shp_name = basename(shape.shp.name)
-        zip_name = splitext(shp_name)[0]
-        return download_file(zip_files([shape.shp.url, shape.dbf.url,
-                shape.shx.url, shape.prj.url], zip_name), zip_name+'.zip')
+        #return Response({'url':  shape.shp.shp_name}, status=status.HTTP_200_OK)
+        
+        file_name = splitext(shp_name)[0]
+        zip_name = settings.UPLOAD_SHAPE+'/'+file_name
+        try: 
+	    zip_files([shape.shp.url, 
+		     shape.dbf.url,
+		     shape.shx.url, 
+		     shape.prj.url],
+		     zip_name)
+	except BadZipfile:
+	    return Response({'detail': 'Bad Zip file'},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return download_file_url(zip_name+'.zip')        
+        
+        #return download_file(zip_files([shape.shp.url, shape.dbf.url,
+        #        shape.shx.url, shape.prj.url], zip_name), zip_name+'.zip')
+              
 
     def delete(self, request, pk):
         """
@@ -328,7 +356,21 @@ class ShapeDetail(APIView):
         except ShapeFile.DoesNotExist:
             return Response({'detail': 'Not found'},
                             status=status.HTTP_404_NOT_FOUND)
-        shape.delete()
+        shape.delete()  
+        
+        #delete related
+        try: 
+	   ckan_resource = CkanResource.objects.get(shp_id=pk)
+	   ckan_resource.delete()
+	except CkanResource.DoesNotExist:
+	   pass
+	 
+        try: 
+	   geonode_resource = GeonodeResource.objects.get(shp_id=pk)
+	   geonode_resource.delete()
+	except GeonodeResource.DoesNotExist:
+	   pass	
+	 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -378,16 +420,10 @@ class ShapeConvert(APIView):
                                         status.HTTP_500_INTERNAL_SERVER_ERROR)
                 return file_content
                 """
-                return Response({'triple-store_url': ''},
-                                      status=status.HTTP_200_OK)
-                """
-                result = None #convert_shp_response_handler(request.DATA.dict(), read_file)
+                
+                #return Response({'triple-store_url': ''},
+                 #                     status=status.HTTP_200_OK)
 
-                if isinstance(result, basestring):
-                    return download_file(result, out_file_path)
-                else:
-                    return result
-                """
             else:
                 return Response(triple_store_serializer.errors,
                                 status=status.HTTP_400_BAD_REQUEST)
@@ -474,10 +510,17 @@ class TripleStoreDetail(APIView):
         except TripleStore.DoesNotExist:
             return Response({'detail': 'Not found'},
                             status=status.HTTP_404_NOT_FOUND)
+        """
+        triplestore_filename = settings.UPLOAD_TRIPLE_STORE+'/'+ \
+        triplestore.name+'.'+triplestore.format_file
+        """
+        return download_file_url(str(triplestore.output_file))
+        """
         triplestore_filename = triplestore.name+'.'+triplestore.format_file
         triplestore_file = file(settings.UPLOAD_TRIPLE_STORE+'/'+
                                 triplestore_filename)
         return download_file(triplestore_file, triplestore_filename)
+        """
 
     def delete(selfself, request, pk):
         """
