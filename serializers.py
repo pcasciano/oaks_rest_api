@@ -8,7 +8,12 @@ class ShapeFileSerializer(serializers.ModelSerializer):
     shape file serializer
     """
     owner = serializers.Field(source='owner.username')
-
+    
+    shp = serializers.SerializerMethodField('get_shp')
+    shx = serializers.SerializerMethodField('get_shx')
+    dbf = serializers.SerializerMethodField('get_dbf')
+    prj = serializers.SerializerMethodField('get_prj')
+    
     class Meta:
         model = ShapeFile
         exclude = ('owner',)
@@ -34,7 +39,20 @@ class ShapeFileSerializer(serializers.ModelSerializer):
         if not shp_name == dbf_name == shx_name:
             raise serializers.ValidationError('shape file not valid.')
         return attrs
-
+        
+        
+    def get_shp(self, obj):
+        return obj.shp.name.split('/')[-1]
+        
+    def get_shx(self, obj):
+        return obj.shx.name.split('/')[-1]
+        
+    def get_dbf(self, obj):
+        return obj.dbf.name.split('/')[-1]
+        
+    def get_prj(self, obj):
+        return obj.prj.name.split('/')[-1]        
+  
 
 class TripleStoreSerializer(serializers.ModelSerializer):
     shp = serializers.PrimaryKeyRelatedField(many=True)
