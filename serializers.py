@@ -8,12 +8,12 @@ class ShapeFileSerializer(serializers.ModelSerializer):
     shape file serializer
     """
     owner = serializers.Field(source='owner.username')
-    
+    """
     shp = serializers.SerializerMethodField('get_shp')
     shx = serializers.SerializerMethodField('get_shx')
     dbf = serializers.SerializerMethodField('get_dbf')
     prj = serializers.SerializerMethodField('get_prj')
-    
+    """
     class Meta:
         model = ShapeFile
         exclude = ('owner',)
@@ -33,11 +33,16 @@ class ShapeFileSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("dbf not valid.")
         """
         #validate shapefile name
-        shp_name = attrs['shp'].name.split('.')[0]
-        dbf_name = attrs['dbf'].name.split('.')[0]
-        shx_name = attrs['shx'].name.split('.')[0]
+        if all(x in attrs for x in ('shp', 'dbf', 'shx')):
+	    shp_name = attrs['shp'].name.split('.')[0]
+	    dbf_name = attrs['dbf'].name.split('.')[0]
+	    shx_name = attrs['shx'].name.split('.')[0]
+	else:
+	    raise serializers.ValidationError('shape file not valid!')
+	
+		
         if not shp_name == dbf_name == shx_name:
-            raise serializers.ValidationError('shape file not valid.')
+            raise serializers.ValidationError('shape file not valid!')
         return attrs
         
         
@@ -79,9 +84,10 @@ class TripleStoreSerializer(serializers.ModelSerializer):
         """
         validates uri params for rdf output format
         """
-        if attrs['format_file'] == 'rdf':
-            self.__validate_uri(attrs['ns_URI'], 'ns_URI')
-            self.__validate_uri(attrs['ontology_NS'], 'ontology_NS')
+        if 'format_file' in attrs:
+	  if attrs['format_file'] == 'rdf':
+	      self.__validate_uri(attrs['ns_URI'], 'ns_URI')
+	      self.__validate_uri(attrs['ontology_NS'], 'ontology_NS')
 
         return attrs
 

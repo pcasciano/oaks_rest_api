@@ -103,8 +103,7 @@ class ShapeList(APIView):
         """
         uploads a  shape file
         type -- base, all        
-	---
-	serializer: oaks_rest_api.serializers.ShapeFileSerializer	
+	---	
 	omit_serializer: true	
 	consumes: ["multipart/form-data"]
 	parameters:
@@ -377,13 +376,7 @@ class ShapeDetail(APIView):
 
 class ShapeConvert(APIView):
     """
-    Converts a shape in a triple store format file(utility)
-
-    shp -- .shp file
-    dbf -- .dbf file
-    shx -- .shx file
-    prj -- .prj file
-    
+    Converts a shape in a triple store format file(utility)   
     """
     throttle_scope = 'utility'
     parser_classes = (MultiPartParser, FormParser)
@@ -391,6 +384,26 @@ class ShapeConvert(APIView):
     def post(self, request):
         """
         Outputs a triple store format file
+        ---
+	omit_serializer: true	
+	consumes: ["multipart/form-data"]
+	parameters:
+	    - name: shp
+	      type: file
+	      required: true
+	      paramType: form
+	    - name: shx
+	      type: file
+	      required: true
+	      paramType: form
+	    - name: dbf
+	      type: file
+	      required: true
+	      paramType: form
+	    - name: prj  
+	      type: file
+	      required: true
+	      paramType: form
         """
         shape_serializer = ShapeFileSerializer(data=request.FILES)
         if shape_serializer.is_valid():
