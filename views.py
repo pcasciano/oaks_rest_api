@@ -493,15 +493,8 @@ class TripleStoreList(APIView):
         params = {'filename':str(triple_store_file), 'path': settings.UPLOAD_TRIPLE_STORE }
         result = post_node_server(data=params, token=token, url='/loadTripleStore')
         
-        #TODO:: handle node.js server responses
-        #result = True
-        #print result
-        if result == True:
-	  return Response({'detail':
-	    'file stored in semantic db'},
-	    status=status.HTTP_201_CREATED)
-        else:
-          return result
+	return Response({'detail': result['details']}, status=result['status'])  
+    
 
 
 class TripleStoreDetail(APIView):
