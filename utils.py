@@ -57,6 +57,7 @@ def zip_files(files, zip_name):
    # s = cStringIO.StringIO()
 #    zip_file = ZipFile(s, 'w')
     zip_name = zip_name+'.zip'
+    print zip_name
     zip_file = ZipFile(zip_name, 'w')
     files_len = len(files)
     #counter for not found files in list arg

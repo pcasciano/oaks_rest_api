@@ -1,9 +1,11 @@
 """API Models for oaks_rest_api application"""
 from django.db import models
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 import binascii
 import os
 from hashlib import sha1
+
 
 #required params for triplegeo
 TGEO_PARAMS = {
@@ -35,10 +37,12 @@ TGEO_STORE_FORMATS = (
 )
 
 class ShapeFile(models.Model):
-    shp = models.FileField(upload_to=settings.UPLOAD_SHAPE, max_length=200)
-    dbf = models.FileField(upload_to=settings.UPLOAD_SHAPE, max_length=200)
-    shx = models.FileField(upload_to=settings.UPLOAD_SHAPE, max_length=200)
-    prj = models.FileField(upload_to=settings.UPLOAD_SHAPE, max_length=200)
+    fs = FileSystemStorage(location=settings.BASE_STORAGE)
+    
+    shp = models.FileField(upload_to=settings.UPLOAD_SHAPE, storage=fs, max_length=200)
+    dbf = models.FileField(upload_to=settings.UPLOAD_SHAPE, storage=fs, max_length=200)
+    shx = models.FileField(upload_to=settings.UPLOAD_SHAPE, storage=fs, max_length=200)
+    prj = models.FileField(upload_to=settings.UPLOAD_SHAPE, storage=fs, max_length=200)
 
     owner = models.ForeignKey('auth.User', related_name='shapefiles')
 
@@ -51,7 +55,8 @@ class ShapeFile(models.Model):
 
 
 class TripleStore(models.Model):
-
+    fs = FileSystemStorage(location=settings.BASE_STORAGE)
+    
     format_file = models.CharField(max_length=9, choices=TGEO_STORE_FORMATS, null=True)
     target_store = models.CharField(max_length=200,
                                     default=TGEO_PARAMS['target_store'], null=True)
@@ -78,7 +83,7 @@ class TripleStore(models.Model):
     input_file = models.CharField(max_length=400, blank=True, null=True)
 
     #output_file = models.CharField(max_length=400, blank=True)
-    output_file = models.FileField(upload_to=settings.UPLOAD_TRIPLE_STORE,
+    output_file = models.FileField(upload_to=settings.UPLOAD_TRIPLE_STORE, storage=fs,
                                    max_length=200, blank=True, null=True)
 
     shp = models.ManyToManyField(ShapeFile)

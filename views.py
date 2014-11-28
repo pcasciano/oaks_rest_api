@@ -260,7 +260,7 @@ class ShapeList(APIView):
       
         if request.QUERY_PARAMS.has_key('type'):
             upload_type = request.QUERY_PARAMS['type'].lower()
-            create_dir(settings.UPLOAD_SHAPE)
+            create_dir(settings.BASE_STORAGE+settings.UPLOAD_SHAPE)
             shape_serializer = ShapeFileSerializer(data=request.FILES)
             
             if upload_type == 'base':            
@@ -618,7 +618,7 @@ class DownloadFile(APIView):
                         shape_file_response.shp.url,
                         shape_file_response.shx.url,
                         shape_file_response.dbf.url,
-                        shape_file.response.prj.url],
+                        shape_file_response.prj.url],
                         name), name+'.zip')
                 else:
                     return shape_file_response
