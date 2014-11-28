@@ -331,12 +331,13 @@ class ShapeDetail(APIView):
         #return Response({'url':  shape.shp.shp_name}, status=status.HTTP_200_OK)
         
         file_name = splitext(shp_name)[0]
-        zip_name = settings.UPLOAD_SHAPE+'/'+file_name
+        zip_name = settings.BASE_STORAGE+settings.UPLOAD_SHAPE+'/'+file_name
+   
         try: 
-	    zip_files([shape.shp.url, 
-		     shape.dbf.url,
-		     shape.shx.url, 
-		     shape.prj.url],
+	    zip_files([settings.BASE_STORAGE+str(shape.shp), 
+		     settings.BASE_STORAGE+str(shape.dbf),
+		     settings.BASE_STORAGE+str(shape.shx), 
+		     settings.BASE_STORAGE+str(shape.prj)],
 		     zip_name)
 	except BadZipfile:
 	    return Response({'detail': 'Bad Zip file'},
@@ -595,6 +596,7 @@ class DownloadFile(APIView):
         """
         try:
             path = settings.UPLOAD_TRIPLE_STORE+'/'+file_name
+            
             return TripleStore.objects.get(output_file=path)
         except TripleStore.DoesNotExist:
             return Response({'detail': 'File not found.'},
@@ -615,10 +617,10 @@ class DownloadFile(APIView):
 
                 if isinstance(shape_file_response, ShapeFile):
                     return download_file(zip_files([
-                        shape_file_response.shp.url,
-                        shape_file_response.shx.url,
-                        shape_file_response.dbf.url,
-                        shape_file_response.prj.url],
+                        settings.BASE_STORAGE+str(shape_file_response.shp),
+                        settings.BASE_STORAGE+str(shape_file_response.shx),
+                        settings.BASE_STORAGE+str(shape_file_response.dbf),
+                        settings.BASE_STORAGE+str(shape_file_response.prj)],
                         name), name+'.zip')
                 else:
                     return shape_file_response
@@ -643,22 +645,26 @@ class DownloadFile(APIView):
                 file_list = []
                 shape_file = self.__search_shape(name)
                 if isinstance(shape_file, ShapeFile):
-                    file_list = [shape_file.shp.url, shape_file.shx.url,
-                                 shape_file.dbf.url, shape_file.prj.url]
+                    file_list = [shape_file.shp, shape_file.shx,
+                                 shape_file.dbf, shape_file.prj]
+	            file_list = [settings.BASE_STORAGE + str(x) for x in file_list]
 
                 for v, t in TGEO_STORE_FORMATS:
-                    file_name = name+'.'+v
+                    file_name = name+'.'+v                  
                     triple_store_file = self.__search_triple_store(file_name)
+                   
                     if isinstance(triple_store_file, TripleStore):
                         try:
-                            file_list.append(triple_store_file.output_file)
+                            file_list.append(settings.BASE_STORAGE + \
+                            str(triple_store_file.output_file))
+                            print file_list
                         except IOError:
                             pass #return Response(status=status.HTTP_404_NOT_FOUND)
 
                 if len(file_list) > 0:
                     return download_file(zip_files(file_list,
-                                                          name+'_all.zip'),
-                                                name+'_all.zip')
+                                                          name+'_all'),
+                                                name+'_all')
                 else:
                     return Response({'detail': 'File not found'},
                                     status=status.HTTP_404_NOT_FOUND)
