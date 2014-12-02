@@ -60,7 +60,7 @@ class ShapeList(APIView):
         return ShapeFile.objects.create(shp=shape_file['shp'], 
                                         shx=shape_file['shx'],
                                         dbf=shape_file['dbf'],
-                                        prj=shape_file['prj'],
+                                        prj=shape_file['prj'] if 'prj' in shape_file else None,
                                         owner=user)
                                          
     def pre_save(self, obj):
@@ -105,12 +105,12 @@ class ShapeList(APIView):
               paramType: form
             - name: format_file
               type: string
-              required: false
+              required: true
               paramType: form    
               defaultValue: rdf
             - name: target_store
               type: string
-              required: false
+              required: true
               paramType: form
               defaultValue: 'GeoSparql'
             - name: feature_string
@@ -192,6 +192,8 @@ class ShapeList(APIView):
         def process(file_shp, params, store_in_semantic_db=False):   
             #create auth token
             token = NodeToken.objects.create(user=self.request.user)   
+            if not 'prj' in request.FILES and 'prj' in params:
+	        params.pop('prj')
             if store_in_semantic_db:
                 params['input_file'] = file_shp.shp.name
                 pos = params['input_file'].rfind('/')
@@ -209,7 +211,8 @@ class ShapeList(APIView):
             else:
                 result = post_node_server(data={'input-file': file_shp.shp.name},
                                           token=token, url='/loadShpInGeonode')
-                
+            if result['status']!= 200 and store_in_semantic_db:
+                triple_store.delete()                  
             return Response({'detail': result['details']},
                             status=result['status'])  
                                                                                              
@@ -217,7 +220,7 @@ class ShapeList(APIView):
             """
             gets a shape file from zip and process it.
             """
-            f = get_shp_from_zip(zip, store_in)
+            f = get_shp_from_zip(zip)
             if f:
                 file_shape =  self.save_shp(f, self.request.user)
                 return process(file_shape, params, 
@@ -232,14 +235,13 @@ class ShapeList(APIView):
         
         if isinstance(upload_type, unicode):    
             create_dir(settings.BASE_STORAGE+settings.UPLOAD_SHAPE)
-            shape_serializer = ShapeFileSerializer(data=request.FILES) 
-                   
+            shape_serializer = ShapeFileSerializer(data=request.FILES)                                   
             if upload_type == 'base': 
                 if shape_serializer.is_valid():
                     file_shp = self.save_shp(request.FILES, self.request.user)
                     save_ckan_resource(file_shp.id, params) 
                 elif u'zip' in request.FILES:
-                    return process_sho_from_zip(request.FILES['zip'], False)  
+                    return process_shp_from_zip(request.FILES['zip'], False)  
                 else:
                     return Response(shape_serializer.errors,
                                     status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)  
@@ -250,8 +252,7 @@ class ShapeList(APIView):
                     triple_store_serializer = TripleStoreSerializer(data=request.DATA)
                     if triple_store_serializer.is_valid():
                         file_shp = self.save_shp(request.FILES, self.request.user)
-                        save_ckan_resource(file_shp.id, params) 
-                        
+                        save_ckan_resource(file_shp.id, params)                        
                         return process(file_shp,  params, store_in_semantic_db=True)
                     else:
                         return Response(triple_store_serializer.errors,

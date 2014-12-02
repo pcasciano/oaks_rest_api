@@ -42,7 +42,7 @@ class ShapeFile(models.Model):
     shp = models.FileField(upload_to=settings.UPLOAD_SHAPE, storage=fs, max_length=200)
     dbf = models.FileField(upload_to=settings.UPLOAD_SHAPE, storage=fs, max_length=200)
     shx = models.FileField(upload_to=settings.UPLOAD_SHAPE, storage=fs, max_length=200)
-    prj = models.FileField(upload_to=settings.UPLOAD_SHAPE, storage=fs, max_length=200)
+    prj = models.FileField(upload_to=settings.UPLOAD_SHAPE, storage=fs, max_length=200,blank=True, null=True)
 
     owner = models.ForeignKey('auth.User', related_name='shapefiles')
 
@@ -59,7 +59,7 @@ class TripleStore(models.Model):
     
     format_file = models.CharField(max_length=9, choices=TGEO_STORE_FORMATS, null=True)
     target_store = models.CharField(max_length=200,
-                                    default=TGEO_PARAMS['target_store'], null=True)
+                                    default=TGEO_PARAMS['target_store'])
     feature_string = models.CharField(max_length=200, blank=True, null=True)
     attribute = models.CharField(max_length=200, blank=True, null=True)
     type_wkt = models.CharField(max_length=12, choices=TGEO_WKT_OBJECTS, null=True, blank=True)

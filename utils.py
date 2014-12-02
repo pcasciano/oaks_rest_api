@@ -21,8 +21,10 @@ def get_shp_from_zip(zip_file):
     except BadZipfile:
         return None
     list_names = zip_f.namelist()
+    #delete any dir containing shape file:
+    list_names = filter(None, [x[x.rfind('/')+1:] for x in list_names]) 
     d = {}
-    for elem in list_names:
+    for elem in list_names:                
         t = elem.split('.')
         d[t[1].lower()] = t[0]
         ll = d.values()

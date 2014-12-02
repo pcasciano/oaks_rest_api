@@ -32,7 +32,7 @@ class ShapeFileSerializer(serializers.ModelSerializer):
         if not attrs['dbf'].content_type == 'application/x-dbf':
             raise serializers.ValidationError("dbf not valid.")
         """
-        #validate shapefile name
+        #validate shapefile name       
         if all(x in attrs for x in ('shp', 'dbf', 'shx')):
 	    shp_name = attrs['shp'].name.split('.')[0]
 	    dbf_name = attrs['dbf'].name.split('.')[0]
@@ -87,7 +87,7 @@ class TripleStoreSerializer(serializers.ModelSerializer):
         if 'format_file' in attrs:
 	  if attrs['format_file'] == 'rdf':
 	      self.__validate_uri(attrs['ns_URI'], 'ns_URI')
-	      self.__validate_uri(attrs['ontology_NS'], 'ontology_NS')
+	      self.__validate_uri(attrs['ontology_NS'], 'ontology_NS')        
 
         return attrs
 
